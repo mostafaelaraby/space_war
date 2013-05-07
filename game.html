@@ -1,0 +1,195 @@
+<html>
+<head>
+
+	<style>
+		canvas{
+			margin-right:auto;
+			margin-left:auto;
+			display: block;
+		}
+	</style>
+	<!--[if IE]><script type="text/javascript" src="js/excanvas.js"></script><![endif]-->
+	<script type="text/javascript" src="js/jquery.js"></script>
+	<script type="text/javascript" src="js/pixi.js"></script>
+	</head>
+	<body>
+	<script>
+	var stage = new PIXI.Stage(0x97c56e, true);// pixi stage
+var renderer = PIXI.autoDetectRenderer(700, 700, null); //auto detect renderer to be canvas or webgl
+document.body.appendChild(renderer.view);//appending renderer view to the body
+// holder to store explosions
+	var explosions = [];
+	var counter_explosions=0;
+		// create an array to store explosion textures
+		var explosionTextures = [];
+var aliens=[];//array holding coordinates and index of aliens
+var bombs=[];//array of objects holding coordinates and index of aliens
+var bomb_texture=PIXI.Texture.fromImage("img/bomb.png");
+var aliens_texture=PIXI.Texture.fromImage("img/enemy.png");
+var plane=PIXI.Sprite.fromImage("img/plane.png");
+var background=PIXI.Sprite.fromImage("img/plane.png");
+var timer=0.5;
+var game_speed=4;
+var count_bomb=0;//holding amount of bombs
+var count_aliens=0;//holding number of aliens
+var background = PIXI.Sprite.fromImage("img/background.png");//background image
+var health=100;
+var hit_amnt=2;
+background.anchor.x=1;
+background.anchor.y=1;
+background.position.x=700;
+background.position.y=700;
+background.setInteractive(true);
+stage.addChild(background);
+plane.y=700-(0.5*plane.height);//half of the plane height
+plane.x=Math.random()*700;
+setInterval(function(){add_aliens()},timer*1000);
+plane.anchor.x = 0;
+plane.anchor.y = 0;
+plane.health=100;
+plane.setInteractive(true);
+stage.addChild(plane);
+
+plane.mousedown = plane.touchstart = function(data){
+this.data=data;
+this.dragging=true;
+}
+requestAnimFrame( animate );
+function animate() {
+requestAnimFrame( animate );
+background.position.y+=game_speed;
+if(background.position.y>2000)
+background.position.y=700;
+var index;
+if(plane.health>0)
+{
+	for(index=0;index<count_bomb;index++)
+	{
+		bombs[index].position.y+=game_speed;
+		if(bombs[index].position.y>700)
+		bombs.remove(index);
+	}
+for(index=0;index<count_aliens;index++)
+{
+aliens[index].position.y+=game_speed;
+if(aliens[index].position.y>=700)
+{
+	aliens.remove(index);
+	count_aliens--;
+}
+else if((aliens[index].position.y+75)==plane.position.y || (aliens[index].position.x-70>plane.position.x && aliens[index].position.x+70<plane.position.x))
+{
+	start_explosion(aliens[index].position.x,aliens[index].position.y);
+plane.health-=hit_amnt;
+aliens.remove(index);
+count_aliens--;
+}
+}
+}
+else
+alert("game over");
+//game over
+renderer.render(stage);
+}
+function start_explosion(x,y)
+{
+	alert(x,y);
+			// create an explosion MovieClip
+			explosions[counter_explosions] = new PIXI.MovieClip(explosionTextures);
+			explosions[counter_explosions].position.x = x;//explosion position
+			explosions[counter_explosions].position.y = y;//explosion position
+			explosions[counter_explosions].anchor.x = 0.5;
+			explosions[counter_explosions].anchor.y = 0.5;
+			explosions[counter_explosions].rotation = Math.random() * Math.PI;
+			explosions[counter_explosions].scale.x = explosions[counter_explosions].scale.y = 0.25;
+			explosions[counter_explosions].gotoAndPlay(Math.random() * 27);
+			stage.addChild(explosions[counter_explosions]);
+counter_explosions++;
+			setTimeout(remove_explosion(counter_explosions), 1000); 
+}
+function remove_explosion(counter){
+	//explosions.remove(counter);
+	counter_explosions--;
+}
+function add_aliens()
+{
+aliens[count_aliens]=new PIXI.Sprite(aliens_texture);
+aliens[count_aliens].anchor.x = 0;
+aliens[count_aliens].anchor.y = 0;
+aliens[count_aliens].position.x = Math.random()*700 ;
+aliens[count_aliens].position.y = 0;
+stage.addChild(aliens[count_aliens]);
+count_aliens++;
+}
+function add_bombs()
+{
+bombs[count_bomb]=new PIXI.Sprite(bomb_texture);
+bombs[count_bomb].anchor.x = 0;
+bombs[count_bomb].anchor.y = 0;
+bombs[count_bomb].position.x = plane.position.x;
+bombs[count_bomb].position.y = plane.position.y;
+stage.addChild(bombs[count_bomb]);
+count_bomb++;
+}
+//events
+//on window resize
+$(window).resize(function() {
+  // This will execute whenever the window is resized
+  renderer.view.style.height=$(window).height();
+  renderer.view.style.width=$(window).height();
+});
+background.mousemove=background.touchmove=function(data)
+{
+	plane.position.x=data.global.x;
+	plane.position.y=data.global.y;
+}
+plane.mousedown=function(data)
+{
+	add_bombs();
+}
+plane.mousemove = plane.touchmove = function(data)
+		{
+			
+			if(this.dragging)
+			{
+				// need to get parent coords..
+				this.position.x=data.global.x;
+				this.position.y=data.global.y;
+			}
+			else
+			{
+			this.position.x=data.global.x;
+			this.position.y=data.global.y;	
+			//u need to fire bombbs up here ;)
+			}
+		}
+		//array remove function
+		// Array Remove - By John Resig (MIT Licensed)
+Array.prototype.remove = function(from, to) {
+  var rest = this.slice((to || from) + 1 || this.length);
+  this.length = from < 0 ? this.length + from : from;
+  return this.push.apply(this, rest);
+};
+//explosions part
+	// create an array of assets to load
+	var assetsToLoader = [ "SpriteSheet.json"];
+	
+	// create a new loader
+	loader = new PIXI.AssetLoader(assetsToLoader);
+	
+	// use callback
+	loader.onComplete = onAssetsLoaded;
+	
+	//begin load
+	loader.load();
+	function onAssetsLoaded()
+	{
+		for (var i=0; i < 26; i++) 
+		{
+		 	var texture = PIXI.Texture.fromFrame("Explosion_Sequence_A " + (i+1) + ".png");
+		 	explosionTextures.push(texture);
+		};
+		
+	}
+	</script>
+	</body></html>
